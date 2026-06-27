@@ -1,10 +1,8 @@
 import { auth } from '@clerk/nextjs/server'
 import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/mongodb'
+import { pingEndpoint } from '@/lib/ping'
 import Endpoint from '@/models/Endpoint'
-import PingLog from '@/models/PingLog'
-
-const PING_TIMEOUT_MS = 10000
 
 export async function POST(request) {
   try {
@@ -31,28 +29,7 @@ export async function POST(request) {
       )
     }
 
-    let status = 0
-    let errorMessage
-    const start = Date.now()
-
-    try {
-      const response = await fetch(endpoint.url, {
-        method: endpoint.method,
-        signal: AbortSignal.timeout(PING_TIMEOUT_MS),
-      })
-      status = response.status
-    } catch (err) {
-      errorMessage = err.name === 'TimeoutError' ? 'Request timed out' : err.message
-    }
-
-    const responseTime = Date.now() - start
-
-    const log = await PingLog.create({
-      endpointId: endpoint._id,
-      status,
-      responseTime,
-      errorMessage,
-    })
+    const log = await pingEndpoint(endpoint)
 
     return NextResponse.json(log, { status: 201 })
   } catch (error) {
