@@ -1,3 +1,4 @@
+import { timingSafeEqual } from 'node:crypto'
 import { NextResponse } from 'next/server'
 import { connectDB } from '@/lib/mongodb'
 import { pingEndpoint } from '@/lib/ping'
@@ -10,8 +11,13 @@ export async function GET(request) {
     return NextResponse.json({ error: 'Server misconfigured' }, { status: 500 })
   }
 
-  const authHeader = request.headers.get('authorization')
-  if (authHeader !== `Bearer ${secret}`) {
+  const authHeader = request.headers.get('authorization') ?? ''
+  const expected = Buffer.from(`Bearer ${secret}`)
+  const provided = Buffer.from(authHeader)
+  if (
+    expected.length !== provided.length ||
+    !timingSafeEqual(expected, provided)
+  ) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 

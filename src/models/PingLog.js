@@ -15,6 +15,7 @@ const PingLogSchema = new mongoose.Schema(
 )
 
 PingLogSchema.index({ endpointId: 1, createdAt: -1 })
+PingLogSchema.index({ createdAt: 1 }, { expireAfterSeconds: 60 * 60 * 24 * 14 })
 
 export default mongoose.models.PingLog ||
   mongoose.model('PingLog', PingLogSchema)

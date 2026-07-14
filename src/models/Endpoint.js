@@ -7,7 +7,7 @@ const EndpointSchema = new mongoose.Schema(
     url: { type: String, required: true, trim: true },
     method: {
       type: String,
-      enum: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'],
+      enum: ['GET', 'HEAD'],
       default: 'GET',
     },
     expectedStatus: { type: Number, default: 200 },
