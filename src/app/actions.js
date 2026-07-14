@@ -1,6 +1,6 @@
 'use server'
 
-import { auth } from '@clerk/nextjs/server'
+import { auth, clerkClient } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
 import { connectDB } from '@/lib/mongodb'
 import { pingEndpoint } from '@/lib/ping'
@@ -16,6 +16,13 @@ async function requireUserId() {
 
 export async function addEndpoint(formData) {
   const userId = await requireUserId()
+
+  // clerkClient is an async factory in @clerk/nextjs v7 (returns a Promise),
+  // so we must await it before accessing the users API.
+  const client = await clerkClient()
+  const user = await client.users.getUser(userId)
+  const ownerEmail = user.emailAddresses?.[0]?.emailAddress
+  if (!ownerEmail) throw new Error('Clerk user must have an email address')
 
   const name = formData.get('name')?.toString().trim()
   const url = formData.get('url')?.toString().trim()
@@ -40,7 +47,7 @@ export async function addEndpoint(formData) {
   await assertSafeUrl(url)
 
   await connectDB()
-  await Endpoint.create({ userId, name, url, method, expectedStatus })
+  await Endpoint.create({ userId, ownerEmail, name, url, method, expectedStatus })
   revalidatePath('/')
 }
 
